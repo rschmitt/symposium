@@ -1,8 +1,15 @@
-use clap::Parser;
+//! Shared `main` for the `cargo-agents` and `symposium` binaries.
+//!
+//! Both executables are the same program; `src/bin/*.rs` are one-line shims
+//! that call [`main`]. Which name was used is recorded as a
+//! [`cli::Invocation`] so help text and error messages name the right
+//! program, and so the two can grow different defaults later.
+
+use clap::FromArgMatches;
 use std::env;
 use std::process::ExitCode;
 
-use crate::cli::{self, Cli, Commands, PluginCommand};
+use crate::cli::{self, Cli, Commands, Invocation, PluginCommand};
 use crate::config;
 use crate::help_render;
 use crate::hook;
@@ -16,16 +23,20 @@ use crate::subcommand_dispatch::dispatch_external;
 pub async fn main() -> ExitCode {
     let mut sym = config::Symposium::from_environment();
 
+    let args: Vec<_> = std::env::args_os().collect();
+    let invocation = Invocation::detect(&args[0]);
+    invocation.set_current();
+
     // When invoked as `cargo agents`, cargo passes "agents" as the first arg.
     // Strip it so clap sees the real arguments.
-    let args: Vec<_> = std::env::args_os().collect();
-    let filtered: Vec<_> = if args.len() > 1 && args[1] == "agents" {
-        std::iter::once(args[0].clone())
-            .chain(args[2..].iter().cloned())
-            .collect()
-    } else {
-        args
-    };
+    let filtered: Vec<_> =
+        if invocation == Invocation::CargoSubcommand && args.len() > 1 && args[1] == "agents" {
+            std::iter::once(args[0].clone())
+                .chain(args[2..].iter().cloned())
+                .collect()
+        } else {
+            args
+        };
 
     let cwd = env::current_dir().expect("failed to get current directory");
 
@@ -36,7 +47,9 @@ pub async fn main() -> ExitCode {
         .iter()
         .map(|arg| arg.to_string_lossy().into_owned())
         .collect::<Vec<_>>();
-    let parse = Cli::try_parse_from(filtered);
+    let parse = cli::command()
+        .try_get_matches_from(filtered)
+        .and_then(|matches| Cli::from_arg_matches(&matches));
 
     // `--help` / `-h` / `help` / no subcommand -> audience-grouped top-level help (or clap's
     // per-command help for `<built-in> --help`).

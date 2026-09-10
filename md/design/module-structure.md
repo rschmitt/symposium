@@ -1,6 +1,6 @@
 # Key modules
 
-Symposium is a Rust crate with both a library (`src/lib.rs`) and a binary (`src/bin/cargo-agents.rs`). The library re-exports all modules so that integration tests can access internals.
+Symposium is a Rust crate with a library (`src/lib.rs`) and two binaries, `cargo-agents` and `symposium`. Both are one-line shims in `src/bin/` that call `entry::main`; the shared `main` body lives in `src/entry.rs`. `cli::Invocation` records which name the process was started under (by the file stem of `argv[0]`) so help and error output name the right program; `cli::command()` builds the clap `Command` with that name and should be used wherever help is rendered. The two are functionally identical today; `Invocation` is the seam for giving `cargo agents` different defaults later. The library re-exports all modules so that integration tests can access internals.
 
 ### `config.rs` — application context
 

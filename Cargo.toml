@@ -15,9 +15,14 @@ path = "src/lib.rs"
 name = "cargo-agents"
 path = "src/bin/cargo-agents.rs"
 
+# Same program under a standalone name; see `src/entry.rs`.
+[[bin]]
+name = "symposium"
+path = "src/bin/symposium.rs"
+
 [package.metadata.binstall]
 pkg-url = "{ repo }/releases/download/{ name }-v{ version }/cargo-agents-{ target }.tar.gz"
-bin-dir = "cargo-agents{ binary-ext }"
+bin-dir = "{ bin }{ binary-ext }"
 pkg-fmt = "tgz"
 [package.metadata.binstall.overrides.x86_64-pc-windows-msvc]
 pkg-url = "{ repo }/releases/download/{ name }-v{ version }/cargo-agents-{ target }.zip"

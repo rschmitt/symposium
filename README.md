@@ -44,7 +44,7 @@ Install with [`cargo binstall`](https://github.com/cargo-bins/cargo-binstall) (p
 cargo binstall symposium   # or: cargo install symposium
 ```
 
-Both provide the `cargo-agents` binary, invoked as `cargo agents`.
+Both install two identical executables: `cargo-agents`, invoked as `cargo agents`, and `symposium`, for use outside of Cargo. Every command below also works as `symposium <command>`.
 
 ## Quick start
 

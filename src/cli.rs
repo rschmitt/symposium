@@ -23,6 +23,65 @@ use crate::subcommand_dispatch::dispatch_external;
 use crate::sync;
 use crate::use_command;
 
+/// Which executable name this process was started under.
+///
+/// `cargo-agents` (whether or not cargo itself dispatched to it) and the
+/// standalone `symposium` binary run the same code today; this only picks
+/// the program name shown in help and error output. It is the seam for
+/// giving the two different defaults later.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Invocation {
+    /// Started as `cargo-agents` (typically via `cargo agents`).
+    CargoSubcommand,
+    /// Started as `symposium`.
+    Standalone,
+}
+
+static INVOCATION: std::sync::OnceLock<Invocation> = std::sync::OnceLock::new();
+
+impl Invocation {
+    /// Classify by the file stem of `argv[0]`.
+    pub fn detect(argv0: &std::ffi::OsStr) -> Self {
+        match Path::new(argv0).file_stem().and_then(|s| s.to_str()) {
+            Some("cargo-agents") => Self::CargoSubcommand,
+            _ => Self::Standalone,
+        }
+    }
+
+    /// Program name as the user typed it.
+    pub fn bin_name(self) -> &'static str {
+        match self {
+            Self::CargoSubcommand => "cargo agents",
+            Self::Standalone => "symposium",
+        }
+    }
+
+    /// Record this process's invocation. Later calls are no-ops.
+    pub fn set_current(self) {
+        let _ = INVOCATION.set(self);
+    }
+
+    /// The recorded invocation; `CargoSubcommand` if none was set (tests).
+    pub fn current() -> Self {
+        INVOCATION.get().copied().unwrap_or(Self::CargoSubcommand)
+    }
+}
+
+/// The clap command for [`Cli`], with `bin_name` matching [`Invocation::current`].
+///
+/// Use this instead of `Cli::command()` wherever help or usage text is rendered.
+pub fn command() -> clap::Command {
+    use clap::CommandFactory;
+    let invocation = Invocation::current();
+    // `bin_name` drives usage lines; `display_name` drives `--version`.
+    Cli::command()
+        .bin_name(invocation.bin_name())
+        .display_name(match invocation {
+            Invocation::CargoSubcommand => "cargo-agents",
+            Invocation::Standalone => "symposium",
+        })
+}
+
 /// Parsed CLI arguments.
 #[derive(Debug, Parser)]
 #[command(

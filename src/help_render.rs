@@ -8,7 +8,7 @@
 
 use std::{fmt::Write as _, path::Path};
 
-use clap::{Command, CommandFactory};
+use clap::Command;
 
 use crate::{
     cli::{Cli, Commands, builtin_audience},
@@ -65,7 +65,7 @@ pub async fn help_text(
 
 /// Render clap's help for the deepest built-in subcommand named in `args`, or `None` if none is present (top-level invocation, or a plugin name).
 pub fn subcommand_help(args: &[String]) -> Option<String> {
-    let mut root = Cli::command();
+    let mut root = crate::cli::command();
     root.build();
 
     let mut current = &root;
@@ -115,7 +115,7 @@ pub async fn render_help(sym: &Symposium, cwd: &Path) -> String {
 }
 
 fn render(plugins: &[ParsedPlugin], deps: &[PackageId], used: &[&str]) -> String {
-    let mut cmd = Cli::command();
+    let mut cmd = crate::cli::command();
     let full = cmd.render_help().to_string();
 
     let (Some(commands_idx), Some(options_idx)) =

@@ -51,17 +51,18 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           mkdir -p dist
-          cp target/${{ matrix.target }}/release/cargo-agents dist/
+          cp target/${{ matrix.target }}/release/cargo-agents target/${{ matrix.target }}/release/symposium dist/
           cd dist
-          tar -czvf cargo-agents-${{ matrix.target }}.tar.gz cargo-agents
+          tar -czvf cargo-agents-${{ matrix.target }}.tar.gz cargo-agents symposium
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
         run: |
           mkdir dist
           copy target\${{ matrix.target }}\release\cargo-agents.exe dist\
+          copy target\${{ matrix.target }}\release\symposium.exe dist\
           cd dist
-          7z a cargo-agents-${{ matrix.target }}.zip cargo-agents.exe
+          7z a cargo-agents-${{ matrix.target }}.zip cargo-agents.exe symposium.exe
 
       - name: Upload to release
         if: github.event_name == 'release'
